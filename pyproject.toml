@@ -1,15 +1,202 @@
-[tool.poetry]
-name = "jnj-rank-calculation"
-version = "0.0.1"
-description = ""
-authors = ["Your Name <you@example.com>"]
+[project]
+name = "lachesis"
+dynamic = [ "version", "dependencies" ]
+description = "Re-calculates Jack and Jill final result of a BZDC Brazilian Zouk competition"
+license = { text = "Proprietary" }
 readme = "README.md"
+requires-python = ">=3.12, <3.13"
+authors = [
+    { name = "Yifei Yu", email = "yifeiyu.eos@gmail.com" }
+]
+
+[project.urls]
+repository = "https://github.com/MacarielAerial/lachesis"
+
+[tool.poetry]
+version = "1.0.0"
+packages = [
+    { include = "lachesis", from = "src", format = "sdist"}
+]
+include = [
+    { path = "src/lachesis/conf_default", format = "sdist" },
+    { path = "notebooks", format = "sdist" }
+]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-Pandas3 = "^0.0.1"
+pydantic = "^2.11.5"
+pandas = "^2.3.0"
+fastapi = {extras = ["standard"], version = "^0.115.12"}
+gradio = "^5.33.0"
 
+[tool.poetry.group.dev.dependencies]
+isort = "^6.0.1"
+pytest = "^8.4.0"
+mypy = "^1.16.0"
+flake8 = "^7.2.0"
+coverage = {extras = ["toml"], version = "^7.8.2"}
+black = "^25.1.0"
+yamllint = "^1.37.1"
+semgrep = "^1.124.0"
+ipykernel = "^6.29.5"
+nbformat = "^5.10.4"
+ruff = "^0.11.13"
+shellcheck-py = "^0.10.0.1"
+python-dotenv = "^1.1.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+force-exclude = '''
+.*/setup\.py$
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+src_paths = ["src", "tests"]
+extend_skip = ["setup.py"]
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+addopts = "--junitxml=test_report.xml"
+testpaths = "tests"
+
+[tool.mypy]
+files = "src"
+mypy_path = "src"
+exclude = [
+    ".venv"
+]
+namespace_packages = true
+explicit_package_bases = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = []
+ignore_missing_imports = true
+warn_return_any = false
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 0
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    '''if self\.debug''',
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    '''@(abc\.)?abstractmethod''',
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"

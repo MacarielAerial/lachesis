@@ -1,8 +1,28 @@
 import itertools
+from pathlib import Path
+from pandas import DataFrame
 import numpy as np
 import pandas as pd
 
-def calculate_relative_placement(scores):
+
+def load_df_scores_from_csv(path_csv: Path) -> DataFrame:
+    df = pd.read_csv(path_csv)
+
+    df["Bib#"] = df["Bib#"].astype(int)
+    df["Rank"] = df["Rank"].astype(int)
+    df["J1"] = df["J1"].astype(int)
+    df["J2"] = df["J2"].astype(int)
+    df["J3"] = df["J3"].astype(int)
+    df["J4"] = df["J4"].astype(int)
+    df["J5"] = df["J5"].astype(int)
+
+    return df
+
+
+def calculate_relative_placement(df_scores: DataFrame) -> DataFrame:
+    # Get the raw data
+    scores = df_scores.values
+
     num_competitors, num_judges = scores.shape
     # Initialize results
     final_rankings = np.zeros(num_competitors, dtype=int)
@@ -70,7 +90,6 @@ def calculate_relative_placement(scores):
                                     print("Ordinal Sum", tie_index, final_rankings[tie_index])
                                 break
                             else:  # Increment ranks based on next placement's ordinal sums
-                                assert False
                                 for next_rank in range(current_rank + 1, num_competitors + 1):
                                     ordinal_sums = get_ordinal_sums(tied, next_rank)
                                     if len(set(ordinal_sums)) == len(ordinal_sums):  # Break tie with unique ordinal sums
@@ -90,7 +109,10 @@ def calculate_relative_placement(scores):
     for new_rank, original_rank in enumerate(unique_ranks, start=1):
         final_rankings[final_rankings == original_rank] = new_rank
 
-    return final_rankings
+    # Turn the result back into a dataframe with auxiliary data
+    df_placement = DataFrame({"Bib#": df_scores["Bib#"].values, "placement": final_rankings})
+
+    return df_placement
 
 
 if __name__ == "__main__":
