@@ -1,0 +1,13 @@
+name: lachesis-live
+
+services:
+  lachesis:
+    build:
+      context: .
+      # This docker compose file is used in production
+      target: live
+      dockerfile: Dockerfile
+    image: lachesis-live
+    container_name: lachesis-live
+    ports:
+      - '5000:8080'

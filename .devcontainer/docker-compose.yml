@@ -1,0 +1,17 @@
+name: lachesis-dev
+
+services:
+  lachesis:
+    build:
+      context: .
+      # Overwrite the main file to use dev stage
+      target: dev
+      dockerfile: Dockerfile
+    image: lachesis-dev
+    container_name: lachesis-dev
+    # Prevent the container from exiting after initialisation
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+    volumes:
+      # Replace placeholder service name
+      - .:/home/vscode/workspaces/lachesis:cached

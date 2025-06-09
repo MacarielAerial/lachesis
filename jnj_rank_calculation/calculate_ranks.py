@@ -94,7 +94,7 @@ def calculate_relative_placement(scores):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("./jnj_warsaw_2024.csv")
+    df = pd.read_csv("./jnj_cologne_2025_intermediate.csv")
     df["Bib#"] = df["Bib#"].astype(int)
     df["Rank"] = df["Rank"].astype(int)
     df["J1"] = df["J1"].astype(int)

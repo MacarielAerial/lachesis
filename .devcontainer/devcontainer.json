@@ -1,0 +1,43 @@
+{
+        "name": "${containerWorkspaceFolderBasename}",
+        "dockerComposeFile": [
+                "../docker-compose.yml",
+                "docker-compose.yml"
+        ],
+    "service": "${containerWorkspaceFolderBasename}",
+        "remoteEnv": {
+                "CI": "${localEnv:CI}"
+        },
+        "features":  {
+                "ghcr.io/devcontainers/features/sshd:1": {}
+        },
+    "mounts": [
+        // Mount the SSH key folder to share with the host process
+        "source=/home/${localEnv:USER}/.ssh,target=/home/vscode/.ssh,readonly,type=bind"
+    ],
+        "workspaceFolder": "/home/vscode/workspaces/lachesis",
+        "customizations": {
+                "vscode": {
+                        "settings": {
+                                "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+                                "terminal.integrated.defaultProfile.linux": "bash",
+                                "terminal.integrated.profiles.linux": {"bash": {"path": "bash"}},
+                                "remote.ssh.enableAgentForwarding": true,
+                                "python.analysis.autoImportCompletions": true
+                        },
+                        "extensions": [
+                                "vscodevim.vim",
+                                "ms-python.python",
+                                "charliermarsh.ruff",
+                                "ms-toolsai.jupyter",
+                                "mechatroner.rainbow-csv",
+                                "tamasfe.even-better-toml",
+                                "davidanson.vscode-markdownlint",
+                                "fnando.linter",
+                                "ms-azuretools.vscode-docker",
+                                "github.vscode-github-actions"
+                        ]
+                }
+        },
+        "remoteUser": "vscode"
+}
