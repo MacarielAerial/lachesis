@@ -1,0 +1,22 @@
+name: ci_general
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and test with devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          runCmd: |
+            poetry install
+            poetry run ./lint.sh
+            poetry run ./test.sh
