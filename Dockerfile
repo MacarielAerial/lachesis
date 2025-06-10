@@ -52,9 +52,14 @@ RUN poetry --version
 
 FROM python:3.12-slim-bookworm AS bake
 
+# Arguments associated with the non-root user
+ARG USERNAME
+ARG USER_UID
+ARG USER_GID
+
 # Set environemntal variables
 ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_HOME=/home/poetry \
+    POETRY_HOME=/home/${USERNAME}/poetry \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
@@ -89,6 +94,9 @@ RUN mkdir -p ${HOME}/app
 COPY pyproject.toml poetry.lock README.md ${HOME}/app/
 COPY src ${HOME}/app/src
 
+# Set working directory
+WORKDIR /home/${USERNAME}/app
+
 # Install python dependencies in container
 RUN poetry install --without dev
 
@@ -111,7 +119,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 # Install system dependencies
-RUN apt-get update && apt-get install - \
+RUN apt-get update && apt-get install -y \
     curl
 
 # Copy over baked environment
@@ -132,4 +140,4 @@ ENV PATH="/home/${USERNAME}/app/.venv/bin:$PATH"
 EXPOSE 7860
 
 # Auto start the fastapi service on start-up
-ENTRYPOINT ["python", "src/lachesis/gradio.py"]
+ENTRYPOINT ["python", "src/lachesis/main.py"]

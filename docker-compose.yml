@@ -1,13 +1,13 @@
-name: lachesis-live
+name: lachesis-runtime
 
 services:
   lachesis:
     build:
       context: .
       # This docker compose file is used in production
-      target: live
+      target: runtime
       dockerfile: Dockerfile
-    image: lachesis-live
-    container_name: lachesis-live
+    image: lachesis-runtime
+    container_name: lachesis-runtime
     ports:
       - '5000:8080'
