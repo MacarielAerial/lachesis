@@ -1,41 +1,28 @@
+from pathlib import Path
 import gradio as gr
-import pandas as pd
-from lachesis.calculate_ranks import calculate_relative_placement
+from lachesis.node.calculate_ranks import calculate_relative_placement, load_df_scores_from_csv
 
-def process_csv(uploaded_file):
-    """
-    Read the uploaded CSV into a DataFrame and calculate relative placement.
+def run_app(file_obj):
+    # file_obj is a dict-like with 'name' and 'data'
+    df_scores = load_df_scores_from_csv(Path(file_obj.name))
+    placements, logs = calculate_relative_placement(df_scores)
+    return placements, logs
 
-    Parameters:
-    uploaded_file: A file-like object or file path for the uploaded CSV.
-
-    Returns:
-    A string representation of the dictionary returned by calculate_relative_placement.
-    """
-    # Determine path or file-like
-    try:
-        # If Gradio provides a file-like object
-        df = pd.read_csv(uploaded_file.name)
-    except AttributeError:
-        # If Gradio provides a path string
-        df = pd.read_csv(uploaded_file)
-
-    # Call the imported function
-    result_df = calculate_relative_placement(df)
-
-    # Return the dataframe as formatted text
-    return str(result_df)
-
-# Create the Gradio interface
-def main():
-    iface = gr.Interface(
-        fn=process_csv,
-        inputs=gr.File(label="Upload CSV File", file_types=[".csv"]),
-        outputs=gr.Textbox(label="Result Dictionary"),
-        title="Relative Placement Calculator",
-        description="Upload a CSV file to compute relative placements using calculate_relative_placement."
-    )
-    iface.launch()
+iface = gr.Interface(
+    fn=run_app,
+    inputs=gr.File(label="Upload CSV with J1–J5 columns"),
+    outputs=[
+        gr.Dataframe(label="Final Placements"),
+        gr.Textbox(label="Detailed Logs", lines=20)
+    ],
+    title="Ballroom Dance Placement Calculator",
+    description="Upload your CSV of judge placings; see final placements and detailed logs of each step."
+)
 
 if __name__ == "__main__":
-    main()
+    from lachesis.node.project_logging import default_logging
+
+    
+    default_logging()
+
+    iface.launch(server_name="0.0.0.0")
