@@ -4,8 +4,8 @@ import gradio as gr
 from lachesis.node.calculate_ranks import calculate_relative_placement, load_df_scores_from_csv
 
 
-USERNAME = os.environ["USERNAME"]
-PASSWORD = os.environ["PASSWORD"]
+USERNAME = os.environ["FRONTEND_USERNAME"]
+PASSWORD = os.environ["FRONTEND_PASSWORD"]
 
 def run_app(file_obj):
     # file_obj is a dict-like with 'name' and 'data'
