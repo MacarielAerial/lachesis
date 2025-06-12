@@ -139,12 +139,9 @@ ENV PATH="/home/${USERNAME}/app/.venv/bin:$PATH"
 # Expose the service port
 EXPOSE 7860
 
-# Add a gradio specific healthcheck
-HEALTHCHECK --interval=10s \
-            --timeout=5s \
-            --start-period=5s \
-            --retries=5 \
-  CMD curl -f http://localhost:7860/gradio_api/startup-events || exit 1
+# Implement an health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:7860/health-check || exit 1
 
 # Auto start the fastapi service on start-up
 ENTRYPOINT ["python", "src/lachesis/main.py"]
