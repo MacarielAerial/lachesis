@@ -26,17 +26,17 @@ include = [
 pydantic = "^2.11.5"
 pandas = "^2.3.0"
 fastapi = {extras = ["standard"], version = "^0.115.12"}
-gradio = "^5.33.0"
+gradio = "^5.33.2"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^6.0.1"
 pytest = "^8.4.0"
 mypy = "^1.16.0"
 flake8 = "^7.2.0"
-coverage = {extras = ["toml"], version = "^7.8.2"}
+coverage = {extras = ["toml"], version = "^7.9.0"}
 black = "^25.1.0"
 yamllint = "^1.37.1"
-semgrep = "^1.124.0"
+semgrep = "^1.125.0"
 ipykernel = "^6.29.5"
 nbformat = "^5.10.4"
 ruff = "^0.11.13"

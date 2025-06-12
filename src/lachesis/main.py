@@ -32,4 +32,4 @@ if __name__ == "__main__":
     load_dotenv()
     default_logging()
 
-    iface.queue().launch(server_name="0.0.0.0", auth=(USERNAME, PASSWORD), root_path="/gradio-demo")
+    iface.queue().launch(server_name="0.0.0.0", auth=(USERNAME, PASSWORD), root_path="/gradio-demo", share=False)
