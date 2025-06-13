@@ -48,7 +48,7 @@ def gradio_auth_dependency(request: Request) -> Optional[str]:
     # 1) Let Gradio fetch its own bootstrap data without creds
     if request.url.path in {
         f"{ROOT_PATH}/config",
-        f"{ROOT_PATH}/manifest.json",
+        f"{ROOT_PATH}/gradio_api/info",
     }:
         return "__gradio_internal__"
 
@@ -91,7 +91,7 @@ class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
         # if a request hits certain endpoints
         if new_path.startswith("/gradio-demo"):
             new_path = new_path.removeprefix("/gradio-demo")
-        if new_path in {"/manifest.json", "/pwa_icon/192", "/config"}:
+        if new_path in {"/manifest.json", "/pwa_icon/192", "/config", "/gradio-api/info"}:
             new_path = f"{ROOT_PATH}{new_path}"
 
         # rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
