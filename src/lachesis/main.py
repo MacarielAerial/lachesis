@@ -57,16 +57,18 @@ def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
 class RewriteManifestMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # if a request hits certain endpoints
+        if request.url.path.startswith("/gradio-demo"):
+            stripped_path = request.url.path.lstrip("/gradio-demo")
+            request.scope["path"]     = stripped_path
+            request.scope["raw_path"] = stripped_path.encode("utf-8")
         if request.url.path in {"/manifest.json", 
-                                "/pwa_icon/192", 
-                                "/gradio-demo/manifest.json", 
-                                "/gradio-demo/pwa_icon/192"
+                                "/pwa_icon/192"
                                 }:
             #rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
-            stripped_path = request.url.path.lstrip("/gradio-demo")
-            new_path = f"{ROOT_PATH}{stripped_path}"
+            new_path = f"{ROOT_PATH}{request.url.path}"
             request.scope["path"]     = new_path
             request.scope["raw_path"] = new_path.encode("utf-8")
+
         return await call_next(request)
 
 # 5) Create your main FastAPI app and mount the middleware
