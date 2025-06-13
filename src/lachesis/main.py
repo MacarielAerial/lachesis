@@ -19,6 +19,7 @@ fastapi_logging()
 USERNAME = os.environ["FRONTEND_USERNAME"]
 PASSWORD = os.environ["FRONTEND_PASSWORD"]
 ROOT_PATH = "/jnj-explainer"
+os.environ["GRADIO_ROOT_PATH"] = ROOT_PATH
 
 # 2) Define Gradio interface
 def run_app(file_obj):
