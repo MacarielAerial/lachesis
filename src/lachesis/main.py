@@ -44,6 +44,14 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 security = HTTPBasic()
 
 def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
+    # 1) Whitelist internal endpoints
+    internal = (
+        request.url.path == f"{ROOT_PATH}/config"
+    )
+    if internal:
+        return
+
+    # 2) Require authentication otherwise
     user_ok = secrets.compare_digest(creds.username, USERNAME)
     pass_ok = secrets.compare_digest(creds.password, PASSWORD)
     if not (user_ok and pass_ok):
