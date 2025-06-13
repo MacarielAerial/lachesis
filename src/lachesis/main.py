@@ -91,7 +91,7 @@ class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
         # if a request hits certain endpoints
         if new_path.startswith("/gradio-demo"):
             new_path = new_path.removeprefix("/gradio-demo")
-        if new_path in {"/manifest.json", "/pwa_icon/192", "/config", "/gradio_api/info", "/theme.css"}:
+        if new_path in {"/manifest.json", "/pwa_icon/192", "/config", "/theme.css"} or new_path.startswith(("gradio_api", "assets", "static")):
             new_path = f"{ROOT_PATH}{new_path}"
 
         # rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
