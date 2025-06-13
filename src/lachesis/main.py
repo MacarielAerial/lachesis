@@ -57,9 +57,14 @@ def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
 class RewriteManifestMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # if a request hits certain endpoints
-        if request.url.path in {"/manifest.json", "/pwa_icon/192"}:
+        if request.url.path in {"/manifest.json", 
+                                "/pwa_icon/192", 
+                                "/gradio-demo/manifest.json", 
+                                "/gradio-demo/pwa_icon/192"
+                                }:
             #rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
-            new_path = f"{ROOT_PATH}{request.url.path}"
+            stripped_path = request.url.path.lstrip("/gradio-demo")
+            new_path = f"{ROOT_PATH}{stripped_path}"
             request.scope["path"]     = new_path
             request.scope["raw_path"] = new_path.encode("utf-8")
         return await call_next(request)
