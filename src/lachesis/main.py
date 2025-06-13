@@ -62,7 +62,8 @@ class RewriteManifestMiddleware(BaseHTTPMiddleware):
             request.scope["path"]     = stripped_path
             request.scope["raw_path"] = stripped_path.encode("utf-8")
         if request.url.path in {"/manifest.json", 
-                                "/pwa_icon/192"
+                                "/pwa_icon/192",
+                                "/config"
                                 }:
             #rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
             new_path = f"{ROOT_PATH}{request.url.path}"
