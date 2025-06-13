@@ -26,7 +26,7 @@ def run_app(file_obj):
     df = load_df_scores_from_csv(Path(file_obj.name))
     return calculate_relative_placement(df)
 
-with gr.Blocks(theme=gr.themes.Base()) as demo:
+with gr.Blocks(theme=gr.themes.Ocean()) as demo:
     # Title and description
     gr.Markdown("# Ballroom Dance Placement Calculator")
     gr.Markdown("Upload your CSV of judge placings; see final placements and detailed logs.")
