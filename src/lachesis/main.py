@@ -3,8 +3,9 @@ import secrets
 from pathlib import Path
 from typing import Dict
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from starlette.middleware.base import BaseHTTPMiddleware
 import gradio as gr
 from dotenv import load_dotenv
 
@@ -16,6 +17,7 @@ load_dotenv()
 fastapi_logging()
 USERNAME = os.environ["FRONTEND_USERNAME"]
 PASSWORD = os.environ["FRONTEND_PASSWORD"]
+ROOT_PATH = "/jnj-explainer"
 
 # 2) Define Gradio interface
 def run_app(file_obj):
@@ -51,14 +53,28 @@ def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
 
-# 4) Create your main FastAPI app and mount that protected sub-app
-app = FastAPI()
+# 4) Write a middleware to fix a gradio template bug with hard coded "/manifest.json" call
+class RewriteManifestMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # if a request hits certain endpoints
+        if request.url.path in {"/manifest.json", "/pwa_icon/192"}:
+            #rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
+            new_path = f"{ROOT_PATH}{request.url.path}"
+            request.scope["path"]     = new_path
+            request.scope["raw_path"] = new_path.encode("utf-8")
+        return await call_next(request)
 
+# 5) Create your main FastAPI app and mount the middleware
+app = FastAPI()
+app.add_middleware(RewriteManifestMiddleware)
+
+# 6) Add a health check endpoint
 # Add a health check
 @app.get("/health-check")
 async def health_check() -> Dict[str, str]:
     return {"message": "The application is running"}
 
+# 7) Mount the gradio app
 # path and root_path params must both be the same
 # They also cannot be gradio-demo because it conflicts with internal paths
-app = gr.mount_gradio_app(app, demo, "/jnj-explainer", auth=(USERNAME, PASSWORD), pwa=True, root_path="/jnj-explainer")
+app = gr.mount_gradio_app(app, demo, ROOT_PATH, auth=(USERNAME, PASSWORD), pwa=True, root_path=ROOT_PATH, favicon_path="./asset/favicon.ico")
