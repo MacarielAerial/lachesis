@@ -54,27 +54,24 @@ def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
         )
 
 # 4) Write a middleware to fix a gradio template bug with hard coded "/manifest.json" call
-class RewriteManifestMiddleware(BaseHTTPMiddleware):
+class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        new_path = request.url.path
         # if a request hits certain endpoints
-        if request.url.path.startswith("/gradio-demo"):
-            stripped_path = request.url.path.removeprefix("/gradio-demo")
-            request.scope["path"]     = stripped_path
-            request.scope["raw_path"] = stripped_path.encode("utf-8")
-        if request.url.path in {"/manifest.json", 
-                                "/pwa_icon/192",
-                                "/config"
-                                }:
-            #rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
+        if new_path.startswith("/gradio-demo"):
+            new_path = new_path.removeprefix("/gradio-demo")
+        if new_path in {"/manifest.json", "/pwa_icon/192", "/config"}:
             new_path = f"{ROOT_PATH}{request.url.path}"
-            request.scope["path"]     = new_path
-            request.scope["raw_path"] = new_path.encode("utf-8")
+
+        # rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
+        request.scope["path"]     = new_path
+        request.scope["raw_path"] = new_path.encode("utf-8")
 
         return await call_next(request)
 
 # 5) Create your main FastAPI app and mount the middleware
 app = FastAPI()
-app.add_middleware(RewriteManifestMiddleware)
+app.add_middleware(RewriteRootRequestMiddleware)
 
 # 6) Add a health check endpoint
 # Add a health check
