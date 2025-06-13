@@ -93,6 +93,7 @@ RUN mkdir -p ${HOME}/app
 # Copy source code and python dependency specification
 COPY pyproject.toml poetry.lock README.md ${HOME}/app/
 COPY src ${HOME}/app/src
+COPY asset ${HOME}/app/asset
 
 # Set working directory
 WORKDIR /home/${USERNAME}/app
