@@ -58,7 +58,7 @@ class RewriteManifestMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # if a request hits certain endpoints
         if request.url.path.startswith("/gradio-demo"):
-            stripped_path = request.url.path.lstrip("/gradio-demo")
+            stripped_path = request.url.path.removeprefix("/gradio-demo")
             request.scope["path"]     = stripped_path
             request.scope["raw_path"] = stripped_path.encode("utf-8")
         if request.url.path in {"/manifest.json", 
