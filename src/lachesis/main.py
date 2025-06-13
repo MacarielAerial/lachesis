@@ -61,7 +61,7 @@ class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
         if new_path.startswith("/gradio-demo"):
             new_path = new_path.removeprefix("/gradio-demo")
         if new_path in {"/manifest.json", "/pwa_icon/192", "/config"}:
-            new_path = f"{ROOT_PATH}{request.url.path}"
+            new_path = f"{ROOT_PATH}{new_path}"
 
         # rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
         request.scope["path"]     = new_path
