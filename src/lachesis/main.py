@@ -1,10 +1,11 @@
+import base64
 import os
 import secrets
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi import FastAPI, Request, status, HTTPException
+from fastapi.security import HTTPBasic
 from starlette.middleware.base import BaseHTTPMiddleware
 import gradio as gr
 from dotenv import load_dotenv
@@ -24,7 +25,7 @@ def run_app(file_obj):
     df = load_df_scores_from_csv(Path(file_obj.name))
     return calculate_relative_placement(df)
 
-with gr.Blocks(theme=gr.themes.Soft()) as demo:
+with gr.Blocks(theme=gr.themes.Base()) as demo:
     # Title and description
     gr.Markdown("# Ballroom Dance Placement Calculator")
     gr.Markdown("Upload your CSV of judge placings; see final placements and detailed logs.")
@@ -43,23 +44,45 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 # 3) Set up FastAPI’s HTTPBasic dependency
 security = HTTPBasic()
 
-def basic_auth(creds: HTTPBasicCredentials = Depends(security)):
-    # 1) Whitelist internal endpoints
-    internal = (
-        request.url.path == f"{ROOT_PATH}/config"
-    )
-    if internal:
-        return
+def gradio_auth_dependency(request: Request) -> Optional[str]:
+    # 1) Let Gradio fetch its own bootstrap data without creds
+    if request.url.path in {
+        f"{ROOT_PATH}/config",
+        f"{ROOT_PATH}/manifest.json",
+    }:
+        return "__gradio_internal__"
 
-    # 2) Require authentication otherwise
-    user_ok = secrets.compare_digest(creds.username, USERNAME)
-    pass_ok = secrets.compare_digest(creds.password, PASSWORD)
-    if not (user_ok and pass_ok):
+    # 2) Otherwise require an Authorization header
+    auth = request.headers.get("authorization")
+    if not auth or not auth.lower().startswith("basic "):
+        # trigger a browser login prompt
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
+            detail="Not authenticated",
             headers={"WWW-Authenticate": "Basic"},
         )
+
+    # 3) Decode and verify credentials
+    try:
+        b64 = auth.split(" ", 1)[1]
+        user_pass = base64.b64decode(b64).decode("utf-8")
+        user, pwd = user_pass.split(":", 1)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    if secrets.compare_digest(user, USERNAME) and secrets.compare_digest(pwd, PASSWORD):
+        return user
+
+    # 4) Wrong creds → challenge again
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid credentials",
+        headers={"WWW-Authenticate": "Basic"},
+    )
 
 # 4) Write a middleware to fix a gradio template bug with hard coded "/manifest.json" call
 class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
@@ -90,4 +113,4 @@ async def health_check() -> Dict[str, str]:
 # 7) Mount the gradio app
 # path and root_path params must both be the same
 # They also cannot be gradio-demo because it conflicts with internal paths
-app = gr.mount_gradio_app(app, demo, ROOT_PATH, auth=(USERNAME, PASSWORD), pwa=True, root_path=ROOT_PATH, favicon_path="./asset/favicon.ico")
+app = gr.mount_gradio_app(app, demo, ROOT_PATH, auth_dependency=gradio_auth_dependency, pwa=True, root_path=ROOT_PATH, favicon_path="./asset/favicon.ico")
