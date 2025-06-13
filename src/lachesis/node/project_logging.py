@@ -11,3 +11,9 @@ def default_logging() -> None:
     logging.config.fileConfig(
         str(config_file_default_logging), disable_existing_loggers=False
     )
+
+
+def fastapi_logging() -> None:
+    default_logging()
+    logging.getLogger("httpcore").setLevel(logging.INFO)
+    logging.getLogger("urllib3").setLevel(logging.INFO)

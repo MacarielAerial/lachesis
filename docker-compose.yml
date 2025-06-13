@@ -12,5 +12,3 @@ services:
     environment:
       FRONTEND_USERNAME: ${FRONTEND_USERNAME}
       FRONTEND_PASSWORD: ${FRONTEND_PASSWORD}
-    ports:
-      - '5000:8080'

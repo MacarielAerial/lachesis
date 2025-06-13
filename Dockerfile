@@ -137,11 +137,11 @@ WORKDIR /home/${USERNAME}/app
 ENV PATH="/home/${USERNAME}/app/.venv/bin:$PATH"
 
 # Expose the service port
-EXPOSE 7860
+EXPOSE 80
 
 # Implement an health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:7860/health-check || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/health-check || exit 1
 
 # Auto start the fastapi service on start-up
-ENTRYPOINT ["python", "src/lachesis/main.py"]
+ENTRYPOINT ["fastapi", "run", "src/lachesis/main.py", "--port", "80"]
