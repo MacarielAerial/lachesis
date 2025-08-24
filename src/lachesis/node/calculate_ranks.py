@@ -1,12 +1,12 @@
+import io
 import itertools
+import logging
 from pathlib import Path
-from typing import Tuple
-from pandas import DataFrame
+from typing import Any, List, Tuple
+
 import numpy as np
 import pandas as pd
-import logging
-import io
-
+from pandas import DataFrame
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +14,12 @@ logger = logging.getLogger(__name__)
 def load_df_scores_from_csv(path_csv: Path) -> DataFrame:
     df = pd.read_csv(path_csv)
 
+    # Drop the result column
+    if "Rank" in df.columns:
+        df = df.drop("Rank", axis=1)
+        logger.info(f"Dropped the result column. Columns remaining: {df.columns}")
+
     df["Bib#"] = df["Bib#"].astype(int)
-    df["Rank"] = df["Rank"].astype(int)
     df["J1"] = df["J1"].astype(int)
     df["J2"] = df["J2"].astype(int)
     df["J3"] = df["J3"].astype(int)
@@ -31,7 +35,10 @@ def load_df_scores_from_csv(path_csv: Path) -> DataFrame:
 
     return df
 
-def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str):
+
+def calculate_relative_placement(  # noqa: C901
+    df_scores: pd.DataFrame,
+) -> Tuple[pd.DataFrame, str]:
     scores = df_scores[["J1", "J2", "J3", "J4", "J5"]].values
     num_competitors, num_judges = scores.shape
     threshold = num_judges // 2 + 1
@@ -40,14 +47,15 @@ def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str)
     log_stream = io.StringIO()
     handler = logging.StreamHandler(log_stream)
     handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logging.Formatter('%(message)s'))
+    handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(handler)
 
     logger.info(f"Total judges: {num_judges}, majority threshold: {threshold}\n")
 
     final = np.zeros(num_competitors, dtype=int)
     pass_num = 1
-    def ordinal_sums(idxs, r):
+
+    def ordinal_sums(idxs: Tuple[Any, Any], r: int) -> List[int]:
         return [int(np.sum(scores[i, scores[i] <= r])) for i in idxs]
 
     # Repeat until all unique
@@ -60,7 +68,7 @@ def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str)
             for k in range(1, num_competitors + 1):
                 cnt = int(np.count_nonzero(scores[i] <= k))
                 if cnt >= threshold:
-                    bib = int(df_scores.at[i, 'Bib#'])
+                    bib = int(df_scores.at[i, "Bib#"])
                     logger.info(f"Bib {bib}: {cnt} judges ≤ {k} → provisional {k}")
                     final[i] = k
                     break
@@ -70,7 +78,7 @@ def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str)
             tied = np.where(final == place)[0]
             if len(tied) <= 1:
                 continue
-            bibs_tied = df_scores.loc[tied, 'Bib#'].tolist()
+            bibs_tied = df_scores.loc[tied, "Bib#"].tolist()
             logger.info(f"Tie at provisional place {place} among Bibs {bibs_tied}")
             # Check all pairs for resolution
             for a, b in itertools.combinations(tied, 2):
@@ -81,26 +89,30 @@ def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str)
                     if counts[0] != counts[1]:
                         # cumulative majority
                         winner, loser = (a, b) if counts[0] > counts[1] else (b, a)
-                        bib_w = int(df_scores.at[winner, 'Bib#'])
-                        bib_l = int(df_scores.at[loser, 'Bib#'])
+                        bib_w = int(df_scores.at[winner, "Bib#"])
+                        bib_l = int(df_scores.at[loser, "Bib#"])
                         final[winner] = place
                         final[loser] = place + 1
-                        logger.info(f"Cumulative-majority at r={r}: counts {counts} → Bib {bib_w} ahead of Bib {bib_l}")
+                        logger.info(
+                            f"Cumulative-majority at r={r}: counts {counts} → Bib {bib_w} ahead of Bib {bib_l}"
+                        )
                         break
                     else:
                         # ordinal-sum
                         sums = ordinal_sums((a, b), place)
                         if sums[0] != sums[1]:
                             winner, loser = (a, b) if sums[0] < sums[1] else (b, a)
-                            bib_w = int(df_scores.at[winner, 'Bib#'])
-                            bib_l = int(df_scores.at[loser, 'Bib#'])
+                            bib_w = int(df_scores.at[winner, "Bib#"])
+                            bib_l = int(df_scores.at[loser, "Bib#"])
                             final[winner] = place
                             final[loser] = place + 1
-                            logger.info(f"Ordinal-sum at place={place}: sums {sums} → Bib {bib_w} ahead of Bib {bib_l}")
+                            logger.info(
+                                f"Ordinal-sum at place={place}: sums {sums} → Bib {bib_w} ahead of Bib {bib_l}"
+                            )
                             break
                 # end for r
 
-        provisional = dict(zip(df_scores['Bib#'].tolist(), final.tolist()))
+        provisional = dict(zip(df_scores["Bib#"].tolist(), final.tolist()))
         logger.info(f"Provisional ranks after pass {pass_num}: {provisional}\n")
         pass_num += 1
 
@@ -110,13 +122,15 @@ def calculate_relative_placement(df_scores: pd.DataFrame) -> (pd.DataFrame, str)
         final[final == old] = new
 
     # Build output DataFrame
-    df_out = pd.DataFrame({
-        'Bib#': df_scores['Bib#'],
-        'Leader': df_scores['Leader'],
-        'Follower': df_scores['Follower'],
-        'Placement': final
-    })
-    df_out = df_out.sort_values('Placement').reset_index(drop=True)
+    df_out = pd.DataFrame(
+        {
+            "Bib#": df_scores["Bib#"],
+            "Leader": df_scores["Leader"],
+            "Follower": df_scores["Follower"],
+            "Placement": final,
+        }
+    )
+    df_out = df_out.sort_values("Placement").reset_index(drop=True)
 
     # Extract logs
     logger.removeHandler(handler)

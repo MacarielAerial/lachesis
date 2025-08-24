@@ -2,15 +2,20 @@ import base64
 import os
 import secrets
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
-from fastapi import FastAPI, Request, status, HTTPException
-from fastapi.security import HTTPBasic
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import FileResponse
 import gradio as gr
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.security import HTTPBasic
+from pandas import DataFrame
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from lachesis.node.calculate_ranks import calculate_relative_placement, load_df_scores_from_csv
+from lachesis.node.calculate_ranks import (
+    calculate_relative_placement,
+    load_df_scores_from_csv,
+)
 from lachesis.node.project_logging import fastapi_logging
 
 # 1) Load credentials
@@ -21,15 +26,19 @@ PASSWORD = os.environ["FRONTEND_PASSWORD"]
 ROOT_PATH = "/jnj-explainer"
 os.environ["GRADIO_ROOT_PATH"] = ROOT_PATH
 
+
 # 2) Define Gradio interface
-def run_app(file_obj):
+def run_app(file_obj) -> Tuple[DataFrame, str]:  # type: ignore[no-untyped-def]
     df = load_df_scores_from_csv(Path(file_obj.name))
     return calculate_relative_placement(df)
+
 
 with gr.Blocks(theme=gr.themes.Ocean()) as demo:
     # Title and description
     gr.Markdown("# Ballroom Dance Placement Calculator")
-    gr.Markdown("Upload your CSV of judge placings; see final placements and detailed logs.")
+    gr.Markdown(
+        "Upload your CSV of judge placings; see final placements and detailed logs."
+    )
 
     # File input and outputs
     with gr.Row():
@@ -44,6 +53,7 @@ with gr.Blocks(theme=gr.themes.Ocean()) as demo:
 
 # 3) Set up FastAPI’s HTTPBasic dependency
 security = HTTPBasic()
+
 
 def gradio_auth_dependency(request: Request) -> Optional[str]:
     # 1) Let Gradio fetch its own bootstrap data without creds
@@ -85,25 +95,33 @@ def gradio_auth_dependency(request: Request) -> Optional[str]:
         headers={"WWW-Authenticate": "Basic"},
     )
 
+
 # 4) Write a middleware to fix a gradio template bug with hard coded "/manifest.json" call
 class RewriteRootRequestMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         new_path = request.url.path
         # if a request hits certain endpoints
         if new_path.startswith("/gradio-demo"):
             new_path = new_path.removeprefix("/gradio-demo")
-        if new_path in {"/manifest.json", "/pwa_icon/192", "/config", "/theme.css"} or new_path.startswith(("/gradio_api", "/assets", "/static")):
+        if new_path in {
+            "/manifest.json",
+            "/pwa_icon/192",
+            "/config",
+            "/theme.css",
+        } or new_path.startswith(("/gradio_api", "/assets", "/static")):
             new_path = f"{ROOT_PATH}{new_path}"
 
         # rewrite it so downstream it’s as if they called /{ROOT_PATH}/endpoint
-        request.scope["path"]     = new_path
+        request.scope["path"] = new_path
         request.scope["raw_path"] = new_path.encode("utf-8")
 
         return await call_next(request)
 
+
 # 5) Create your main FastAPI app and mount the middleware
 app = FastAPI()
 app.add_middleware(RewriteRootRequestMiddleware)
+
 
 # 6) Add a health check endpoint
 # Add a health check
@@ -111,7 +129,20 @@ app.add_middleware(RewriteRootRequestMiddleware)
 async def health_check() -> Dict[str, str]:
     return {"message": "The application is running"}
 
+# 6.1) Optionally serve favicon
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
 # 7) Mount the gradio app
 # path and root_path params must both be the same
 # They also cannot be gradio-demo because it conflicts with internal paths
-app = gr.mount_gradio_app(app, demo, ROOT_PATH, auth_dependency=gradio_auth_dependency, pwa=True, root_path=ROOT_PATH, favicon_path="./asset/favicon.ico")
+app = gr.mount_gradio_app(
+    app,
+    demo,
+    ROOT_PATH,
+    auth_dependency=gradio_auth_dependency,
+    pwa=True,
+    root_path=ROOT_PATH,
+    allowed_paths=["/static"]
+)

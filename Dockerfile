@@ -145,4 +145,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:80/health-check || exit 1
 
 # Auto start the fastapi service on start-up
-ENTRYPOINT ["fastapi", "run", "src/lachesis/main.py", "--port", "80"]
+ENTRYPOINT ["uvicorn", "lachesis.main:app", "--host", "0.0.0.0", "--port", "80"]
