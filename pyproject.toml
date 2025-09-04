@@ -15,7 +15,7 @@ repository = "https://github.com/MacarielAerial/lachesis"
 [tool.poetry]
 version = "1.0.0"
 packages = [
-    { include = "lachesis", from = "src", format = "sdist"}
+    { include = "lachesis", from = "src"}
 ]
 include = [
     { path = "src/lachesis/conf_default", format = "sdist" },
